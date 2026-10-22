@@ -1886,6 +1886,15 @@ var todayColorId = null;
   });
 })();
 
+function scrollToQuiz() {
+  setTimeout(function(){
+    var qz = document.getElementById('quiz');
+    if (!qz) return;
+    var top = qz.getBoundingClientRect().top + window.pageYOffset - 56;
+    window.scrollTo({top: top, behavior: 'smooth'});
+  }, 50);
+}
+
 function goToQuiz() {
   if (!todayColorId) return;
   var dot = document.getElementById('today-dot');
@@ -1893,8 +1902,7 @@ function goToQuiz() {
   switchScreen('qs-color', 'qs-quiz');
   qCur = 0; qScore = {O:0,C:0,E:0,A:0,N:0};
   renderQ();
-  var qz = document.getElementById('quiz');
-  if (qz) qz.scrollIntoView({behavior:'smooth', block:'start'});
+  scrollToQuiz();
 }
 
 function startQuiz() { goToQuiz(); }
@@ -2158,8 +2166,7 @@ function showResult() {
   currentResult = best;
   var f = FD[best], cfgKey = f.cfgKey, c = f.c;
   switchScreen('qs-quiz', 'qs-result');
-  var qz = document.getElementById('quiz');
-  if (qz) qz.scrollIntoView({behavior:'smooth', block:'start'});
+  scrollToQuiz();
 
   // Tile + basics
   document.getElementById('r-tile').innerHTML = tileNew(cfgKey, 220);
@@ -2271,8 +2278,7 @@ function goToWall() {
   try { localStorage.setItem('tile_wall', JSON.stringify(wallRecords)); } catch(e){}
   renderWall();
   switchScreen('qs-result', 'qs-wall');
-  var qz = document.getElementById('quiz');
-  if (qz) qz.scrollIntoView({behavior:'smooth', block:'start'});
+  scrollToQuiz();
 }
 
 function showWallOnly() {
@@ -2282,7 +2288,7 @@ function showWallOnly() {
     var el=document.getElementById(id); if(el) el.classList.remove('active');
   });
   var w=document.getElementById('qs-wall'); if(w) w.classList.add('active');
-  document.getElementById('quiz').scrollIntoView({behavior:'smooth'});
+  scrollToQuiz();
 }
 
 function renderWall() {
@@ -2335,8 +2341,7 @@ function restartQuiz() {
     var el=document.getElementById(id); if(el) el.classList.remove('active');
   });
   document.getElementById('qs-color').classList.add('active');
-  var qz = document.getElementById('quiz');
-  if (qz) qz.scrollIntoView({behavior:'smooth', block:'start'});
+  scrollToQuiz();
 }
 
 // ══════════════════════════════════════════
