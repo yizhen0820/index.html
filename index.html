@@ -2660,21 +2660,47 @@ function downloadCard() {
     return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
   }
 
-  // 畫花磚圖（用 data URI 避免跨域）
+  // 畫花磚圖
   var tileSize = 210;
   var tx = (cardW - tileSize) / 2;
   var ty = 55;
-  var svgStr = _origTileNew(f.cfgKey, tileSize);
-  var encoded = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
-  var img = new Image();
-  img.onload = function() {
-    ctx.drawImage(img, tx, ty, tileSize, tileSize);
-    finishCard();
-  };
-  img.onerror = function() {
-    finishCard();
-  };
-  img.src = encoded;
+
+  function drawTileAndFinish(imgSrc) {
+    var img = new Image();
+    img.onload = function() {
+      ctx.drawImage(img, tx, ty, tileSize, tileSize);
+      finishCard();
+    };
+    img.onerror = function() {
+      // 畫一個佔位框
+      ctx.globalAlpha = 0.08;
+      ctx.fillStyle = cfg.frame;
+      ctx.fillRect(tx, ty, tileSize, tileSize);
+      ctx.globalAlpha = 1;
+      finishCard();
+    };
+    img.src = imgSrc;
+  }
+
+  var pngFile = TILE_IMGS[f.cfgKey];
+  if (pngFile) {
+    // 用 fetch 讀取 PNG 轉成 blob URL，避免 canvas 跨域汙染
+    fetch(pngFile)
+      .then(function(r) { return r.blob(); })
+      .then(function(blob) {
+        var blobUrl = URL.createObjectURL(blob);
+        drawTileAndFinish(blobUrl);
+      })
+      .catch(function() {
+        // fetch 失敗，退回 SVG
+        var svgStr = _origTileNew(f.cfgKey, tileSize);
+        drawTileAndFinish('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr));
+      });
+  } else {
+    // 沒有 PNG，直接用 SVG
+    var svgStr = _origTileNew(f.cfgKey, tileSize);
+    drawTileAndFinish('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr));
+  }
 }
 
 buildCollection();
