@@ -2588,7 +2588,7 @@ function downloadCard() {
       ctx.fillStyle = cfg.frame;
       ctx.font = '400 9px "Noto Serif TC", serif';
       ctx.textAlign = 'center';
-      ctx.fillText('幸 運 色', cardW/2 + 22, dotY + 4);
+      ctx.fillText('幸 運 色', cardW/2 + 26, dotY + 4);
       ctx.globalAlpha = 1;
     }
 
@@ -2641,36 +2641,24 @@ function downloadCard() {
     return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
   }
 
-  // 畫花磚圖
+  // 畫花磚圖（永遠用 SVG，避免跨域問題）
   var tileSize = 210;
   var tx = (cardW - tileSize) / 2;
   var ty = 55;
-  var imgKey = TILE_IMGS[f.cfgKey];
-  if (imgKey) {
-    var img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = function() {
-      ctx.drawImage(img, tx, ty, tileSize, tileSize);
-      finishCard();
-    };
-    img.onerror = function() { drawSVGFallback(); };
-    img.src = imgKey;
-  } else {
-    drawSVGFallback();
-  }
-
-  function drawSVGFallback() {
-    var svgStr = _origTileNew(f.cfgKey, tileSize);
-    var blob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
-    var url = URL.createObjectURL(blob);
-    var img = new Image();
-    img.onload = function() {
-      ctx.drawImage(img, tx, ty, tileSize, tileSize);
-      URL.revokeObjectURL(url);
-      finishCard();
-    };
-    img.src = url;
-  }
+  var svgStr = _origTileNew(f.cfgKey, tileSize);
+  var blob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var img = new Image();
+  img.onload = function() {
+    ctx.drawImage(img, tx, ty, tileSize, tileSize);
+    URL.revokeObjectURL(url);
+    finishCard();
+  };
+  img.onerror = function() {
+    URL.revokeObjectURL(url);
+    finishCard();
+  };
+  img.src = url;
 }
 
 buildCollection();
