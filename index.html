@@ -1512,10 +1512,34 @@ var TILE_CFG = {
   }
 };
 
-// ── legacy wrapper so old code calling tile() still works
+// ── 手繪花磚 PNG 對照表
+var TILE_IMGS = {
+  orchid:    'orchid.png.PNG',
+  lotus:     'lotus.png.PNG',
+  wisteria:  'wisteria.png.PNG',
+  rose:      'rose.png.PNG',
+  osmanthus: 'osmanthus.png.PNG',
+  hibiscus:  'hibiscus.png.PNG',
+  sunflower: 'sunflower.png.PNG',
+  narcissus: 'narcissus.png.PNG'
+};
+
+// ── 所有 tileNew() 呼叫優先用PNG，失敗退回SVG
+var _origTileNew = tileNew;
+tileNew = function(key, size) {
+  size = size || 130;
+  if (TILE_IMGS[key]) {
+    return '<div style="width:'+size+'px;height:'+size+'px;display:inline-block;overflow:hidden;box-shadow:0 2px 12px rgba(44,30,15,0.15);">'
+      +'<img src="'+TILE_IMGS[key]+'" alt="'+key+'" style="width:100%;height:100%;object-fit:cover;display:block;" '
+      +'onerror="this.parentNode.outerHTML=_origTileNew(\''+key+'\','+size+')"/>'
+      +'</div>';
+  }
+  return _origTileNew(key, size);
+};
+
+// ── legacy wrapper
 function tile(key, size) {
   size = size || 130;
-  // Map old keys to new TILE_CFG keys
   var mapped = TILE_CFG[key] ? key : 'rose';
   return tileNew(mapped, size);
 }
