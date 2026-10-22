@@ -1893,6 +1893,8 @@ function goToQuiz() {
   switchScreen('qs-color', 'qs-quiz');
   qCur = 0; qScore = {O:0,C:0,E:0,A:0,N:0};
   renderQ();
+  var qz = document.getElementById('quiz');
+  if (qz) qz.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 function startQuiz() { goToQuiz(); }
@@ -2156,6 +2158,8 @@ function showResult() {
   currentResult = best;
   var f = FD[best], cfgKey = f.cfgKey, c = f.c;
   switchScreen('qs-quiz', 'qs-result');
+  var qz = document.getElementById('quiz');
+  if (qz) qz.scrollIntoView({behavior:'smooth', block:'start'});
 
   // Tile + basics
   document.getElementById('r-tile').innerHTML = tileNew(cfgKey, 220);
@@ -2267,6 +2271,8 @@ function goToWall() {
   try { localStorage.setItem('tile_wall', JSON.stringify(wallRecords)); } catch(e){}
   renderWall();
   switchScreen('qs-result', 'qs-wall');
+  var qz = document.getElementById('quiz');
+  if (qz) qz.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 function showWallOnly() {
@@ -2329,6 +2335,8 @@ function restartQuiz() {
     var el=document.getElementById(id); if(el) el.classList.remove('active');
   });
   document.getElementById('qs-color').classList.add('active');
+  var qz = document.getElementById('quiz');
+  if (qz) qz.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 // ══════════════════════════════════════════
