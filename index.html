@@ -2476,100 +2476,189 @@ function downloadCard() {
   if (!currentResult) { alert('請先完成測驗再下載卡牌！'); return; }
   var best = currentResult;
   var f = FD[best], cfg = TILE_CFG[f.cfgKey];
-  var scale = 2;
-  var cardW = 252, cardH = 354;
+  var scale = 3;
+  var cardW = 360, cardH = 540;
   var canvas = document.createElement('canvas');
   canvas.width = cardW * scale;
   canvas.height = cardH * scale;
   var ctx = canvas.getContext('2d');
   ctx.scale(scale, scale);
 
-  // 背景
-  ctx.fillStyle = cfg.bg;
-  ctx.fillRect(0, 0, cardW, cardH);
+  function finishCard() {
+    // 背景漸層
+    var grad = ctx.createLinearGradient(0, 0, 0, cardH);
+    grad.addColorStop(0, cfg.bg);
+    grad.addColorStop(1, shadeColor(cfg.bg, -8));
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, cardW, cardH);
 
-  // 外框
-  ctx.strokeStyle = cfg.frame;
-  ctx.globalAlpha = 0.35;
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(6, 6, cardW-12, cardH-12);
-  ctx.globalAlpha = 1;
+    // 細緻邊框（雙框）
+    ctx.strokeStyle = cfg.frame;
+    ctx.globalAlpha = 0.25;
+    ctx.lineWidth = 8;
+    ctx.strokeRect(4, 4, cardW-8, cardH-8);
+    ctx.globalAlpha = 0.12;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(14, 14, cardW-28, cardH-28);
+    ctx.globalAlpha = 1;
 
-  // 頂部文字
-  ctx.fillStyle = cfg.frame;
-  ctx.globalAlpha = 0.55;
-  ctx.font = '7px serif';
-  ctx.textAlign = 'center';
-  ctx.letterSpacing = '5px';
-  ctx.fillText('T A I W A N  花 磚 性 格 卡 牌', cardW/2, 26);
-  ctx.globalAlpha = 1;
+    // 頂部小字
+    ctx.fillStyle = cfg.frame;
+    ctx.globalAlpha = 0.45;
+    ctx.font = '500 9px "Noto Serif TC", serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('T A I W A N  ·  花 磚 性 格 卡 牌', cardW/2, 36);
+    ctx.globalAlpha = 1;
 
-  // 花名
-  ctx.fillStyle = cfg.frame;
-  ctx.font = 'bold 20px serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(f.name, cardW/2, 222);
+    // 裝飾線
+    drawLine(ctx, 50, 44, cardW-50, 44, cfg.frame, 0.15, 0.5);
 
-  // 學名
-  ctx.globalAlpha = 0.5;
-  ctx.font = 'italic 8px serif';
-  ctx.fillText(f.latin, cardW/2, 238);
-  ctx.globalAlpha = 1;
+    // 花磚圖（已由呼叫方繪製）
 
-  // 分隔線
-  ctx.strokeStyle = cfg.frame;
-  ctx.globalAlpha = 0.2;
-  ctx.lineWidth = 0.6;
-  ctx.beginPath(); ctx.moveTo(28, 202); ctx.lineTo(cardW-28, 202); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(28, 248); ctx.lineTo(cardW-28, 248); ctx.stroke();
-  ctx.globalAlpha = 1;
+    // 花名大字
+    ctx.fillStyle = cfg.frame;
+    ctx.font = '900 34px "Noto Serif TC", serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(f.name, cardW/2, 318);
 
-  // 花語
-  ctx.fillStyle = cfg.frame;
-  ctx.globalAlpha = 0.72;
-  ctx.font = '10px serif';
-  f.花語.slice(0,3).forEach(function(w, i) {
-    ctx.fillText(w, cardW/2, 264 + i*17);
-  });
-  ctx.globalAlpha = 1;
+    // 學名斜體
+    ctx.globalAlpha = 0.5;
+    ctx.font = 'italic 12px Georgia, serif';
+    ctx.fillText(f.latin, cardW/2, 338);
+    ctx.globalAlpha = 1;
 
-  // trait
-  ctx.globalAlpha = 0.45;
-  ctx.font = '8px serif';
-  ctx.fillText(f.trait, cardW/2, 320);
-  ctx.globalAlpha = 1;
+    // 分隔線
+    drawLine(ctx, 60, 350, cardW-60, 350, cfg.frame, 0.2, 0.8);
 
-  // 底部文字
-  ctx.globalAlpha = 0.4;
-  ctx.font = '7px serif';
-  ctx.fillText('台灣花磚博物館 · Taiwan Tile Museum', cardW/2, 344);
-  ctx.globalAlpha = 1;
+    // 花語 tags
+    var tags = f.花語.slice(0, 4);
+    var tagY = 372;
+    var totalTagW = 0;
+    var tagPad = 10, tagH = 20, tagGap = 8;
+    ctx.font = '11px "Noto Serif TC", serif';
+    var tagWidths = tags.map(function(w){ return ctx.measureText(w).width + tagPad*2; });
+    tagWidths.forEach(function(w){ totalTagW += w + tagGap; });
+    totalTagW -= tagGap;
+    var tagX = (cardW - totalTagW) / 2;
+    tags.forEach(function(w, i) {
+      var tw = tagWidths[i];
+      ctx.globalAlpha = 0.15;
+      ctx.fillStyle = cfg.frame;
+      roundRect(ctx, tagX, tagY - tagH + 3, tw, tagH, 3);
+      ctx.fill();
+      ctx.globalAlpha = 0.5;
+      ctx.strokeStyle = cfg.frame;
+      ctx.lineWidth = 0.8;
+      roundRect(ctx, tagX, tagY - tagH + 3, tw, tagH, 3);
+      ctx.stroke();
+      ctx.globalAlpha = 0.85;
+      ctx.fillStyle = cfg.frame;
+      ctx.font = '11px "Noto Serif TC", serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(w, tagX + tw/2, tagY);
+      ctx.globalAlpha = 1;
+      tagX += tw + tagGap;
+    });
 
-  // 花磚圖片
-  var imgKey = TILE_IMGS[f.cfgKey];
-  var tileSize = 160;
+    // trait 特質
+    ctx.globalAlpha = 0.6;
+    ctx.fillStyle = cfg.frame;
+    ctx.font = 'italic 11px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(f.trait, cardW/2, 408);
+    ctx.globalAlpha = 1;
+
+    // 情緒一句話
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = cfg.frame;
+    ctx.font = '13px "Noto Serif TC", serif';
+    ctx.textAlign = 'center';
+    wrapText(ctx, f.情緒 ? f.情緒.slice(0,36)+'…' : '', cardW/2, 436, cardW-80, 20);
+    ctx.globalAlpha = 1;
+
+    // 幸運色色點
+    if (f.lc && f.lc.length >= 2) {
+      var dotY = 480, dotR = 7;
+      var dotX = cardW/2 - dotR*2 - 4;
+      ctx.beginPath(); ctx.arc(dotX, dotY, dotR, 0, Math.PI*2);
+      ctx.fillStyle = f.lc[0]; ctx.globalAlpha = 0.9; ctx.fill();
+      ctx.beginPath(); ctx.arc(dotX + dotR*2+4, dotY, dotR, 0, Math.PI*2);
+      ctx.fillStyle = f.lc[1]; ctx.globalAlpha = 0.9; ctx.fill();
+      ctx.globalAlpha = 0.45;
+      ctx.fillStyle = cfg.frame;
+      ctx.font = '9px "Noto Serif TC", serif';
+      ctx.fillText('幸 運 色', cardW/2 + dotR*2, dotY + 4);
+      ctx.globalAlpha = 1;
+    }
+
+    // 底部線 + 版權
+    drawLine(ctx, 50, 498, cardW-50, 498, cfg.frame, 0.1, 0.5);
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = cfg.frame;
+    ctx.font = '8px "Noto Serif TC", serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('台灣花磚 × SEL 情緒教育  ·  Taiwan Encaustic Tile', cardW/2, 516);
+    ctx.globalAlpha = 1;
+
+    // 輸出 PNG
+    var png = canvas.toDataURL('image/png');
+    var a = document.createElement('a');
+    a.href = png;
+    a.download = '花磚卡牌_' + f.name + '.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  function drawLine(ctx, x1,y1,x2,y2,color,alpha,lw) {
+    ctx.save(); ctx.strokeStyle=color; ctx.globalAlpha=alpha; ctx.lineWidth=lw;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); ctx.restore();
+  }
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+    ctx.quadraticCurveTo(x+w,y,x+w,y+r); ctx.lineTo(x+w,y+h-r);
+    ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); ctx.lineTo(x+r,y+h);
+    ctx.quadraticCurveTo(x,y+h,x,y+h-r); ctx.lineTo(x,y+r);
+    ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+  }
+  function wrapText(ctx, text, x, y, maxW, lineH) {
+    var chars = text.split('');
+    var line = '';
+    for (var i=0; i<chars.length; i++) {
+      var test = line + chars[i];
+      if (ctx.measureText(test).width > maxW && line !== '') {
+        ctx.fillText(line, x, y); y += lineH; line = chars[i];
+      } else { line = test; }
+    }
+    if (line) ctx.fillText(line, x, y);
+  }
+  function shadeColor(hex, amt) {
+    var num = parseInt(hex.replace('#',''), 16);
+    var r = Math.min(255, Math.max(0, (num>>16)+amt));
+    var g = Math.min(255, Math.max(0, ((num>>8)&0xff)+amt));
+    var b = Math.min(255, Math.max(0, (num&0xff)+amt));
+    return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+  }
+
+  // 畫花磚圖
+  var tileSize = 200;
   var tx = (cardW - tileSize) / 2;
-  var ty = 34;
+  var ty = 62;
+  var imgKey = TILE_IMGS[f.cfgKey];
   if (imgKey) {
     var img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = function() {
       ctx.drawImage(img, tx, ty, tileSize, tileSize);
-      var png = canvas.toDataURL('image/png');
-      var a = document.createElement('a');
-      a.href = png;
-      a.download = '花磚卡牌_' + f.name + '.png';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      finishCard();
     };
-    img.onerror = function() { drawSVGTile(); };
+    img.onerror = function() { drawSVGFallback(); };
     img.src = imgKey;
   } else {
-    drawSVGTile();
+    drawSVGFallback();
   }
 
-  function drawSVGTile() {
+  function drawSVGFallback() {
     var svgStr = _origTileNew(f.cfgKey, tileSize);
     var blob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
     var url = URL.createObjectURL(blob);
@@ -2577,13 +2666,7 @@ function downloadCard() {
     img.onload = function() {
       ctx.drawImage(img, tx, ty, tileSize, tileSize);
       URL.revokeObjectURL(url);
-      var png = canvas.toDataURL('image/png');
-      var a = document.createElement('a');
-      a.href = png;
-      a.download = '花磚卡牌_' + f.name + '.png';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      finishCard();
     };
     img.src = url;
   }
