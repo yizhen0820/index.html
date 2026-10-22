@@ -2495,142 +2495,117 @@ function downloadCard() {
   if (!currentResult) { alert('請先完成測驗再下載卡牌！'); return; }
   var best = currentResult;
   var f = FD[best], cfg = TILE_CFG[f.cfgKey];
-  var scale = 3;
   var cardW = 360, cardH = 560;
-  var canvas = document.createElement('canvas');
-  canvas.width = cardW * scale;
-  canvas.height = cardH * scale;
-  var ctx = canvas.getContext('2d');
-  ctx.scale(scale, scale);
 
-  // ── helper functions ──
-  function dl(x1,y1,x2,y2,color,alpha,lw) {
-    ctx.save(); ctx.strokeStyle=color; ctx.globalAlpha=alpha; ctx.lineWidth=lw;
-    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); ctx.restore();
+  // ── 純 SVG 卡牌，完全不用 canvas，無跨域問題 ──
+  var fr = cfg.frame;
+  var tileSize = 220;
+  var tileX = (cardW - tileSize) / 2;
+  var tileY = 48;
+
+  // 花磚 SVG 內容（已是純幾何，直接內嵌）
+  var tileSvg = _origTileNew(f.cfgKey, tileSize);
+  // 從 tileSvg 提取內部內容（去掉外層 <svg> 標籤，改用 <g> 嵌入）
+  var tileInner = tileSvg.replace(/<svg[^>]*>/, '').replace(/<\/svg>/, '');
+
+  // 處理花語 tags（估算寬度，每個中文字約 11px，padding 各 10px）
+  var tags = f.花語.slice(0, 4);
+  var tagH = 20, tagGap = 6, tagY = 350;
+  var tagWidths = tags.map(function(t){ return t.length * 11 + 20; });
+  var totalTagW = tagWidths.reduce(function(a,b){return a+b;},0) + tagGap*(tags.length-1);
+  var tagStartX = (cardW - totalTagW) / 2;
+
+  var tagSvg = '';
+  var tx2 = tagStartX;
+  tags.forEach(function(t, i) {
+    var tw = tagWidths[i];
+    tagSvg += '<rect x="'+tx2+'" y="'+tagY+'" width="'+tw+'" height="'+tagH+'" rx="3" fill="'+fr+'" fill-opacity="0.1" stroke="'+fr+'" stroke-opacity="0.3" stroke-width="0.7"/>';
+    tagSvg += '<text x="'+(tx2+tw/2)+'" y="'+(tagY+13)+'" text-anchor="middle" font-family="Noto Serif TC,serif" font-size="10" fill="'+fr+'" fill-opacity="0.8">'+t+'</text>';
+    tx2 += tw + tagGap;
+  });
+
+  // 情緒文字換行（每行約 18 個中文字）
+  var emoText = f.情緒 || '';
+  var emoLines = [];
+  var lineLen = 18;
+  for (var i = 0; i < emoText.length; i += lineLen) {
+    emoLines.push(emoText.slice(i, i + lineLen));
   }
-  function rr(x,y,w,h,r) {
-    ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
-    ctx.quadraticCurveTo(x+w,y,x+w,y+r); ctx.lineTo(x+w,y+h-r);
-    ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); ctx.lineTo(x+r,y+h);
-    ctx.quadraticCurveTo(x,y+h,x,y+h-r); ctx.lineTo(x,y+r);
-    ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
-  }
-  function wt(text,x,y,maxW,lineH) {
-    var chars=text.split(''), line='';
-    for(var i=0;i<chars.length;i++){
-      var test=line+chars[i];
-      if(ctx.measureText(test).width>maxW&&line!==''){ctx.fillText(line,x,y);y+=lineH;line=chars[i];}
-      else{line=test;}
-    }
-    if(line)ctx.fillText(line,x,y);
+  var emoSvg = emoLines.map(function(line, i){
+    return '<text x="'+(cardW/2)+'" y="'+(422+i*20)+'" text-anchor="middle" font-family="Noto Serif TC,serif" font-size="11" fill="'+fr+'" fill-opacity="0.65">'+line+'</text>';
+  }).join('');
+
+  // 幸運色點
+  var lcSvg = '';
+  if (f.lc && f.lc.length >= 2) {
+    var dotY = 490, dotX = cardW/2 - 28;
+    lcSvg = '<circle cx="'+dotX+'" cy="'+dotY+'" r="7" fill="'+f.lc[0]+'" opacity="0.9"/>'
+          + '<circle cx="'+(dotX+18)+'" cy="'+dotY+'" r="7" fill="'+f.lc[1]+'" opacity="0.9"/>'
+          + '<text x="'+(cardW/2+26)+'" y="'+(dotY+4)+'" text-anchor="middle" font-family="Noto Serif TC,serif" font-size="9" fill="'+fr+'" fill-opacity="0.4">幸 運 色</text>';
   }
 
-  // ── 完整繪製卡牌（傳入花磚圖片，可為null）──
-  function renderCard(tileImg) {
-    // 1. 背景
-    ctx.fillStyle = cfg.bg;
-    ctx.fillRect(0, 0, cardW, cardH);
-
-    // 2. 花磚圖（先畫，文字蓋在上面）
-    if (tileImg) {
-      var tileSize = 210, tx = (cardW-tileSize)/2, ty = 55;
-      ctx.drawImage(tileImg, tx, ty, tileSize, tileSize);
-    }
-
-    // 3. 細邊框
-    ctx.strokeStyle = cfg.frame; ctx.globalAlpha = 0.2; ctx.lineWidth = 1;
-    ctx.strokeRect(10, 10, cardW-20, cardH-20); ctx.globalAlpha = 1;
-
-    // 4. 頂部小字
-    ctx.fillStyle = cfg.frame; ctx.globalAlpha = 0.4;
-    ctx.font = '400 8px "Noto Serif TC", serif'; ctx.textAlign = 'center';
-    ctx.fillText('T A I W A N  ·  花 磚 性 格 卡 牌', cardW/2, 30); ctx.globalAlpha = 1;
-    dl(40, 38, cardW-40, 38, cfg.frame, 0.12, 0.6);
-
-    // 5. 花名
-    ctx.fillStyle = cfg.frame; ctx.font = '900 32px "Noto Serif TC", serif';
-    ctx.textAlign = 'center'; ctx.globalAlpha = 1;
-    ctx.fillText(f.name, cardW/2, 308);
-
-    // 6. 學名
-    ctx.globalAlpha = 0.45; ctx.font = 'italic 11px Georgia, serif';
-    ctx.fillText(f.latin, cardW/2, 326); ctx.globalAlpha = 1;
-    dl(50, 336, cardW-50, 336, cfg.frame, 0.15, 0.6);
-
-    // 7. 花語 tags
-    var tags = f.花語.slice(0,4);
-    ctx.font = '400 11px "Noto Serif TC", serif';
-    var tagPad=12, tagH=22, tagGap=7;
-    var tagWidths = tags.map(function(w){ return ctx.measureText(w).width+tagPad*2; });
-    var totalW = tagWidths.reduce(function(a,b){return a+b;},0)+tagGap*(tags.length-1);
-    var tagX = (cardW-totalW)/2, tagY = 348;
-    tags.forEach(function(w,i){
-      var tw=tagWidths[i];
-      ctx.globalAlpha=0.12; ctx.fillStyle=cfg.frame; rr(tagX,tagY,tw,tagH,4); ctx.fill();
-      ctx.globalAlpha=0.35; ctx.strokeStyle=cfg.frame; ctx.lineWidth=0.7; rr(tagX,tagY,tw,tagH,4); ctx.stroke();
-      ctx.globalAlpha=0.8; ctx.fillStyle=cfg.frame; ctx.font='400 11px "Noto Serif TC", serif';
-      ctx.textAlign='left'; ctx.fillText(w,tagX+tagPad,tagY+tagH-6); ctx.globalAlpha=1;
-      tagX+=tw+tagGap;
-    });
-
-    // 8. trait
-    ctx.globalAlpha=0.5; ctx.fillStyle=cfg.frame; ctx.font='italic 11px Georgia, serif';
-    ctx.textAlign='center'; ctx.fillText(f.trait,cardW/2,394); ctx.globalAlpha=1;
-    dl(50,404,cardW-50,404,cfg.frame,0.1,0.5);
-
-    // 9. 情緒描述
-    ctx.globalAlpha=0.65; ctx.fillStyle=cfg.frame;
-    ctx.font='400 12px "Noto Serif TC", serif'; ctx.textAlign='center';
-    wt(f.情緒||'', cardW/2, 424, cardW-70, 22); ctx.globalAlpha=1;
-
-    // 10. 幸運色
-    if(f.lc&&f.lc.length>=2){
-      var dotY=490, dotR=7, dotX=cardW/2-28;
-      ctx.beginPath(); ctx.arc(dotX,dotY,dotR,0,Math.PI*2);
-      ctx.fillStyle=f.lc[0]; ctx.globalAlpha=0.9; ctx.fill();
-      ctx.beginPath(); ctx.arc(dotX+18,dotY,dotR,0,Math.PI*2);
-      ctx.fillStyle=f.lc[1]; ctx.globalAlpha=0.9; ctx.fill();
-      ctx.globalAlpha=0.4; ctx.fillStyle=cfg.frame;
-      ctx.font='400 9px "Noto Serif TC", serif'; ctx.textAlign='center';
-      ctx.fillText('幸 運 色',cardW/2+26,dotY+4); ctx.globalAlpha=1;
+  // PNG 圖（若有）轉 base64 並內嵌，否則用 SVG 花磚
+  function buildAndDownload(pngDataUrl) {
+    var tileContent;
+    if (pngDataUrl) {
+      tileContent = '<image href="'+pngDataUrl+'" x="'+tileX+'" y="'+tileY+'" width="'+tileSize+'" height="'+tileSize+'"/>';
+    } else {
+      tileContent = '<g transform="translate('+tileX+','+tileY+')">'+tileInner+'</g>';
     }
 
-    // 11. 底部
-    dl(40,514,cardW-40,514,cfg.frame,0.1,0.5);
-    ctx.globalAlpha=0.28; ctx.fillStyle=cfg.frame;
-    ctx.font='400 8px "Noto Serif TC", serif'; ctx.textAlign='center';
-    ctx.fillText('台灣花磚 × SEL 情緒教育  ·  Taiwan Encaustic Tile',cardW/2,530);
-    ctx.globalAlpha=1;
+    var svgCard = '<?xml version="1.0" encoding="UTF-8"?>'
+      + '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="'+cardW+'" height="'+cardH+'" viewBox="0 0 '+cardW+' '+cardH+'">'
+      + '<defs><style>@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&amp;display=swap");</style></defs>'
+      // 背景
+      + '<rect width="'+cardW+'" height="'+cardH+'" fill="'+cfg.bg+'"/>'
+      // 花磚
+      + tileContent
+      // 細邊框
+      + '<rect x="10" y="10" width="'+(cardW-20)+'" height="'+(cardH-20)+'" fill="none" stroke="'+fr+'" stroke-opacity="0.2" stroke-width="1"/>'
+      // 頂部小字
+      + '<text x="'+(cardW/2)+'" y="30" text-anchor="middle" font-family="Noto Serif TC,serif" font-size="8" fill="'+fr+'" fill-opacity="0.4" letter-spacing="2">T A I W A N  ·  花 磚 性 格 卡 牌</text>'
+      + '<line x1="40" y1="38" x2="'+(cardW-40)+'" y2="38" stroke="'+fr+'" stroke-opacity="0.12" stroke-width="0.6"/>'
+      // 花名
+      + '<text x="'+(cardW/2)+'" y="308" text-anchor="middle" font-family="Noto Serif TC,serif" font-size="32" font-weight="900" fill="'+fr+'">'+f.name+'</text>'
+      // 學名
+      + '<text x="'+(cardW/2)+'" y="326" text-anchor="middle" font-family="Georgia,serif" font-size="11" font-style="italic" fill="'+fr+'" fill-opacity="0.45">'+f.latin+'</text>'
+      + '<line x1="50" y1="336" x2="'+(cardW-50)+'" y2="336" stroke="'+fr+'" stroke-opacity="0.15" stroke-width="0.6"/>'
+      // 花語 tags
+      + tagSvg
+      // trait
+      + '<text x="'+(cardW/2)+'" y="392" text-anchor="middle" font-family="Georgia,serif" font-size="11" font-style="italic" fill="'+fr+'" fill-opacity="0.5">'+f.trait+'</text>'
+      + '<line x1="50" y1="402" x2="'+(cardW-50)+'" y2="402" stroke="'+fr+'" stroke-opacity="0.1" stroke-width="0.5"/>'
+      // 情緒描述
+      + emoSvg
+      // 幸運色
+      + lcSvg
+      // 底部
+      + '<line x1="40" y1="514" x2="'+(cardW-40)+'" y2="514" stroke="'+fr+'" stroke-opacity="0.1" stroke-width="0.5"/>'
+      + '<text x="'+(cardW/2)+'" y="530" text-anchor="middle" font-family="Noto Serif TC,serif" font-size="8" fill="'+fr+'" fill-opacity="0.28">台灣花磚 × SEL 情緒教育  ·  Taiwan Encaustic Tile</text>'
+      + '</svg>';
 
-    // 12. 輸出 PNG
-    var png = canvas.toDataURL('image/png');
+    var blob = new Blob([svgCard], {type: 'image/svg+xml;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
-    a.href = png; a.download = '花磚卡牌_'+f.name+'.png';
+    a.href = url;
+    a.download = '花磚卡牌_' + f.name + '.svg';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
   }
 
-  // ── 載入花磚圖片後繪製 ──
-  function loadAndRender(src) {
-    var img = new Image();
-    img.onload = function(){ renderCard(img); };
-    img.onerror = function(){ renderCard(null); };
-    img.src = src;
-  }
-
+  // 若有 PNG 圖，fetch 後轉 base64 內嵌；否則直接用 SVG 花磚
   var pngFile = TILE_IMGS[f.cfgKey];
   if (pngFile) {
     fetch(pngFile)
       .then(function(r){ return r.blob(); })
-      .then(function(blob){ loadAndRender(URL.createObjectURL(blob)); })
-      .catch(function(){
-        var svg = _origTileNew(f.cfgKey, 210);
-        var blob = new Blob([svg], {type:'image/svg+xml'});
-        loadAndRender(URL.createObjectURL(blob));
-      });
+      .then(function(blob){
+        var reader = new FileReader();
+        reader.onload = function(e){ buildAndDownload(e.target.result); };
+        reader.readAsDataURL(blob);
+      })
+      .catch(function(){ buildAndDownload(null); });
   } else {
-    var svg = _origTileNew(f.cfgKey, 210);
-    var blob = new Blob([svg], {type:'image/svg+xml'});
-    loadAndRender(URL.createObjectURL(blob));
+    buildAndDownload(null);
   }
 }
 
