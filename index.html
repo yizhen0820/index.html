@@ -1746,6 +1746,16 @@ var B5Flowers = {
   A: ['jasmine', 'osmanthus', 'orchid', 'deer'],
   N: ['plum_butterfly', 'wisteria', 'narcissus', 'orchid_butterfly']
 };
+
+// Big5 × 今日色彩情緒 → 花磚對應（所有20種花磚都可能出現）
+// mood groups: warm(red/orange/yellow), cool(green/teal/blue), deep(purple/grey/brown/black), soft(pink/white)
+var B5ColorFlowers = {
+  O: { warm: 'lotus_fish',      cool: 'butterfly',   deep: 'lotus',          soft: 'orchid_butterfly' },
+  C: { warm: 'chrysanthemum',   cool: 'crane',        deep: 'plum',           soft: 'narcissus'        },
+  E: { warm: 'peony',           cool: 'rose_crane',   deep: 'wisteria',       soft: 'rose'             },
+  A: { warm: 'sunflower',       cool: 'osmanthus',    deep: 'orchid',         soft: 'jasmine'          },
+  N: { warm: 'hibiscus',        cool: 'fish',         deep: 'plum_butterfly', soft: 'deer'             }
+};
 var B5Names = {O:'開放性（Openness）',C:'盡責性（Conscientiousness）',E:'外向性（Extraversion）',A:'親和性（Agreeableness）',N:'神經質（Neuroticism）'};
 var B5Desc  = {O:'富想像力，對新體驗充滿好奇，善於感受美感與創造力。',C:'自律、有條理，對目標持之以恆，注重細節與品質。',E:'精力充沛，善於社交，在人群中獲得能量，表達力強。',A:'溫柔體貼，重視和諧，對他人充滿同理心與關懷。',N:'情感細膩，感受力強，對環境變化高度敏感，內省深沉。'};
 
@@ -2133,7 +2143,9 @@ function renderSEL(topDim, accentColor) {
 function showResult() {
   var topDim = 'O', topVal = -1;
   ['O','C','E','A','N'].forEach(function(d){ if((qScore[d]||0)>topVal){topVal=qScore[d]||0;topDim=d;} });
-  var best = B5Flowers[topDim][0];
+  // 結合今日色彩情緒與Big5維度，從20種花磚中選出最符合的一種
+  var mood = getColorMood(todayColorId || 'pink');
+  var best = (B5ColorFlowers[topDim] && B5ColorFlowers[topDim][mood]) || B5Flowers[topDim][0];
   currentResult = best;
   var f = FD[best], cfgKey = f.cfgKey, c = f.c;
   switchScreen('qs-quiz', 'qs-result');
@@ -2641,24 +2653,21 @@ function downloadCard() {
     return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
   }
 
-  // 畫花磚圖（永遠用 SVG，避免跨域問題）
+  // 畫花磚圖（用 data URI 避免跨域）
   var tileSize = 210;
   var tx = (cardW - tileSize) / 2;
   var ty = 55;
   var svgStr = _origTileNew(f.cfgKey, tileSize);
-  var blob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
-  var url = URL.createObjectURL(blob);
+  var encoded = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
   var img = new Image();
   img.onload = function() {
     ctx.drawImage(img, tx, ty, tileSize, tileSize);
-    URL.revokeObjectURL(url);
     finishCard();
   };
   img.onerror = function() {
-    URL.revokeObjectURL(url);
     finishCard();
   };
-  img.src = url;
+  img.src = encoded;
 }
 
 buildCollection();
