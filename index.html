@@ -2477,7 +2477,7 @@ function downloadCard() {
   var best = currentResult;
   var f = FD[best], cfg = TILE_CFG[f.cfgKey];
   var scale = 3;
-  var cardW = 360, cardH = 540;
+  var cardW = 360, cardH = 560;
   var canvas = document.createElement('canvas');
   canvas.width = cardW * scale;
   canvas.height = cardH * scale;
@@ -2485,119 +2485,120 @@ function downloadCard() {
   ctx.scale(scale, scale);
 
   function finishCard() {
-    // 背景漸層
-    var grad = ctx.createLinearGradient(0, 0, 0, cardH);
-    grad.addColorStop(0, cfg.bg);
-    grad.addColorStop(1, shadeColor(cfg.bg, -8));
-    ctx.fillStyle = grad;
+    // 背景
+    ctx.fillStyle = cfg.bg;
     ctx.fillRect(0, 0, cardW, cardH);
 
-    // 細緻邊框（雙框）
+    // 細邊框（只有單細線，不遮字）
     ctx.strokeStyle = cfg.frame;
-    ctx.globalAlpha = 0.25;
-    ctx.lineWidth = 8;
-    ctx.strokeRect(4, 4, cardW-8, cardH-8);
-    ctx.globalAlpha = 0.12;
+    ctx.globalAlpha = 0.2;
     ctx.lineWidth = 1;
-    ctx.strokeRect(14, 14, cardW-28, cardH-28);
+    ctx.strokeRect(10, 10, cardW-20, cardH-20);
     ctx.globalAlpha = 1;
 
     // 頂部小字
     ctx.fillStyle = cfg.frame;
-    ctx.globalAlpha = 0.45;
-    ctx.font = '500 9px "Noto Serif TC", serif';
+    ctx.globalAlpha = 0.4;
+    ctx.font = '400 8px "Noto Serif TC", serif';
     ctx.textAlign = 'center';
-    ctx.fillText('T A I W A N  ·  花 磚 性 格 卡 牌', cardW/2, 36);
+    ctx.fillText('T A I W A N  ·  花 磚 性 格 卡 牌', cardW/2, 30);
     ctx.globalAlpha = 1;
 
-    // 裝飾線
-    drawLine(ctx, 50, 44, cardW-50, 44, cfg.frame, 0.15, 0.5);
+    // 頂部細線
+    drawLine(ctx, 40, 38, cardW-40, 38, cfg.frame, 0.12, 0.6);
 
-    // 花磚圖（已由呼叫方繪製）
+    // 花磚圖（由呼叫方繪製在 ty=55）
 
     // 花名大字
     ctx.fillStyle = cfg.frame;
-    ctx.font = '900 34px "Noto Serif TC", serif';
+    ctx.font = '900 32px "Noto Serif TC", serif';
     ctx.textAlign = 'center';
-    ctx.fillText(f.name, cardW/2, 318);
+    ctx.globalAlpha = 1;
+    ctx.fillText(f.name, cardW/2, 308);
 
-    // 學名斜體
-    ctx.globalAlpha = 0.5;
-    ctx.font = 'italic 12px Georgia, serif';
-    ctx.fillText(f.latin, cardW/2, 338);
+    // 學名
+    ctx.globalAlpha = 0.45;
+    ctx.font = 'italic 11px Georgia, serif';
+    ctx.fillText(f.latin, cardW/2, 326);
     ctx.globalAlpha = 1;
 
     // 分隔線
-    drawLine(ctx, 60, 350, cardW-60, 350, cfg.frame, 0.2, 0.8);
+    drawLine(ctx, 50, 336, cardW-50, 336, cfg.frame, 0.15, 0.6);
 
-    // 花語 tags
+    // 花語 tag（橫排，像網站）
     var tags = f.花語.slice(0, 4);
-    var tagY = 372;
-    var totalTagW = 0;
-    var tagPad = 10, tagH = 20, tagGap = 8;
-    ctx.font = '11px "Noto Serif TC", serif';
+    ctx.font = '400 11px "Noto Serif TC", serif';
+    var tagPad = 12, tagH = 22, tagGap = 7;
     var tagWidths = tags.map(function(w){ return ctx.measureText(w).width + tagPad*2; });
-    tagWidths.forEach(function(w){ totalTagW += w + tagGap; });
-    totalTagW -= tagGap;
-    var tagX = (cardW - totalTagW) / 2;
+    var totalW = tagWidths.reduce(function(a,b){return a+b;}, 0) + tagGap*(tags.length-1);
+    var tagX = (cardW - totalW) / 2;
+    var tagY = 348;
     tags.forEach(function(w, i) {
       var tw = tagWidths[i];
-      ctx.globalAlpha = 0.15;
+      // 背景
+      ctx.globalAlpha = 0.12;
       ctx.fillStyle = cfg.frame;
-      roundRect(ctx, tagX, tagY - tagH + 3, tw, tagH, 3);
+      roundRect(ctx, tagX, tagY, tw, tagH, 4);
       ctx.fill();
-      ctx.globalAlpha = 0.5;
+      // 邊框
+      ctx.globalAlpha = 0.35;
       ctx.strokeStyle = cfg.frame;
-      ctx.lineWidth = 0.8;
-      roundRect(ctx, tagX, tagY - tagH + 3, tw, tagH, 3);
+      ctx.lineWidth = 0.7;
+      roundRect(ctx, tagX, tagY, tw, tagH, 4);
       ctx.stroke();
-      ctx.globalAlpha = 0.85;
+      // 文字
+      ctx.globalAlpha = 0.8;
       ctx.fillStyle = cfg.frame;
-      ctx.font = '11px "Noto Serif TC", serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(w, tagX + tw/2, tagY);
+      ctx.font = '400 11px "Noto Serif TC", serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(w, tagX + tagPad, tagY + tagH - 6);
       ctx.globalAlpha = 1;
       tagX += tw + tagGap;
     });
 
-    // trait 特質
-    ctx.globalAlpha = 0.6;
+    // trait
+    ctx.globalAlpha = 0.5;
     ctx.fillStyle = cfg.frame;
     ctx.font = 'italic 11px Georgia, serif';
     ctx.textAlign = 'center';
-    ctx.fillText(f.trait, cardW/2, 408);
+    ctx.fillText(f.trait, cardW/2, 394);
     ctx.globalAlpha = 1;
 
-    // 情緒一句話
-    ctx.globalAlpha = 0.7;
+    // 分隔線
+    drawLine(ctx, 50, 404, cardW-50, 404, cfg.frame, 0.1, 0.5);
+
+    // 情緒描述
+    ctx.globalAlpha = 0.65;
     ctx.fillStyle = cfg.frame;
-    ctx.font = '13px "Noto Serif TC", serif';
+    ctx.font = '400 12px "Noto Serif TC", serif';
     ctx.textAlign = 'center';
-    wrapText(ctx, f.情緒 ? f.情緒.slice(0,36)+'…' : '', cardW/2, 436, cardW-80, 20);
+    var emoText = f.情緒 ? f.情緒 : '';
+    wrapText(ctx, emoText, cardW/2, 424, cardW-70, 22);
     ctx.globalAlpha = 1;
 
     // 幸運色色點
     if (f.lc && f.lc.length >= 2) {
-      var dotY = 480, dotR = 7;
-      var dotX = cardW/2 - dotR*2 - 4;
+      var dotY = 490, dotR = 7;
+      var dotX = cardW/2 - 28;
       ctx.beginPath(); ctx.arc(dotX, dotY, dotR, 0, Math.PI*2);
       ctx.fillStyle = f.lc[0]; ctx.globalAlpha = 0.9; ctx.fill();
-      ctx.beginPath(); ctx.arc(dotX + dotR*2+4, dotY, dotR, 0, Math.PI*2);
+      ctx.beginPath(); ctx.arc(dotX+18, dotY, dotR, 0, Math.PI*2);
       ctx.fillStyle = f.lc[1]; ctx.globalAlpha = 0.9; ctx.fill();
-      ctx.globalAlpha = 0.45;
+      ctx.globalAlpha = 0.4;
       ctx.fillStyle = cfg.frame;
-      ctx.font = '9px "Noto Serif TC", serif';
-      ctx.fillText('幸 運 色', cardW/2 + dotR*2, dotY + 4);
+      ctx.font = '400 9px "Noto Serif TC", serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('幸 運 色', cardW/2 + 22, dotY + 4);
       ctx.globalAlpha = 1;
     }
 
     // 底部線 + 版權
-    drawLine(ctx, 50, 498, cardW-50, 498, cfg.frame, 0.1, 0.5);
-    ctx.globalAlpha = 0.3;
+    drawLine(ctx, 40, 514, cardW-40, 514, cfg.frame, 0.1, 0.5);
+    ctx.globalAlpha = 0.28;
     ctx.fillStyle = cfg.frame;
-    ctx.font = '8px "Noto Serif TC", serif';
+    ctx.font = '400 8px "Noto Serif TC", serif';
     ctx.textAlign = 'center';
-    ctx.fillText('台灣花磚 × SEL 情緒教育  ·  Taiwan Encaustic Tile', cardW/2, 516);
+    ctx.fillText('台灣花磚 × SEL 情緒教育  ·  Taiwan Encaustic Tile', cardW/2, 530);
     ctx.globalAlpha = 1;
 
     // 輸出 PNG
@@ -2641,9 +2642,9 @@ function downloadCard() {
   }
 
   // 畫花磚圖
-  var tileSize = 200;
+  var tileSize = 210;
   var tx = (cardW - tileSize) / 2;
-  var ty = 62;
+  var ty = 55;
   var imgKey = TILE_IMGS[f.cfgKey];
   if (imgKey) {
     var img = new Image();
