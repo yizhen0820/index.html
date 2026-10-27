@@ -1522,9 +1522,9 @@ var TILE_IMGS = {
   hibiscus:  'hibiscus.png.PNG',
   sunflower: 'sunflower.png.PNG',
   narcissus: 'narcissus.png.PNG',
-  chrysanthemum: 'chrysanthemum.png.PNG',
-  fish:          'koi.png.PNG',
-  butterfly:     'Colorful Butterfly.png.PNG'
+  chrysanthemum: 'chrysanthemum.png',
+  fish:          'koi.png',
+  butterfly:     'Colorful Butterfly.png'
 };
 
 // ── 所有 tileNew() 呼叫優先用PNG，失敗退回SVG
@@ -1949,6 +1949,7 @@ function switchScreen(from, to) {
 var SEL_DATA = {
   O: {
     color_names: ['靛藍','薰衣草紫'],
+    color_hex: ['#4050A8','#C0A0D8'],
     color_meanings: ['靛藍象徵直覺、創造與深層思維，能刺激大腦的探索欲望，與你對未知事物的高度開放性共鳴。','薰衣草紫代表夢想力與敏感度，幫助整合感性與理性，讓想像力不失方向。'],
     color_psych: '色彩研究顯示，高開放性的人對藍紫色系有特別強烈的情感共鳴——這類色彩能同時啟動「探索」與「沉澱」兩種心理狀態，正是你在面對新事物時最自然的內在節奏。',
     triggers: [
@@ -1973,6 +1974,7 @@ var SEL_DATA = {
   },
   C: {
     color_names: ['深藍灰','霧白'],
+    color_hex: ['#607080','#F0F0F5'],
     color_meanings: ['深藍灰代表秩序、穩定與深度思考，讓空間感覺可靠而有結構，呼應你對計劃與系統的天然傾向。','霧白象徵清晰、純粹與未受干擾的思維空間，幫助你在複雜情境中保持頭腦清醒。'],
     color_psych: '研究發現高盡責性的人偏好低飽和度、高明度的色彩——這類色彩能降低環境噪音感，讓大腦專注在目標上。過度鮮豔的色彩環境反而會讓你感到焦慮或分心。',
     triggers: [
@@ -1997,6 +1999,7 @@ var SEL_DATA = {
   },
   E: {
     color_names: ['珊瑚紅','暖橙'],
+    color_hex: ['#D05060','#E09050'],
     color_meanings: ['珊瑚紅結合了紅色的熱情與橙色的親切感，能提升社交能量與自信，與你在人群中的自然活力共鳴。','暖橙代表溫暖、樂觀與連結感，刺激社交驅動力，讓你在互動中感到充電而非消耗。'],
     color_psych: '色彩心理學研究顯示，外向型人格對暖色系有顯著的正向情緒激活效果——暖紅橙色能提升多巴胺分泌，強化你在社交場合中的「在場感」與活力輸出。',
     triggers: [
@@ -2021,6 +2024,7 @@ var SEL_DATA = {
   },
   A: {
     color_names: ['嫩綠','溫米白'],
+    color_hex: ['#70A878','#F5EED8'],
     color_meanings: ['嫩綠代表成長、和諧與修復力，在心理上能降低攻擊性與競爭感，強化你對關係與和諧的天然渴望。','溫米白帶來安全感與包容性，象徵一個「什麼都可以說」的空間，呼應你給予他人的溫暖容器感。'],
     color_psych: '高親和性的人對自然色系（綠、米、米白）有特別強的平靜響應——這些色彩能降低皮質醇（壓力荷爾蒙）分泌，讓你進入最自然的照顧與同理狀態，而不是防禦或競爭模式。',
     triggers: [
@@ -2045,6 +2049,7 @@ var SEL_DATA = {
   },
   N: {
     color_names: ['靛紫','霧藍'],
+    color_hex: ['#7050A0','#8090C0'],
     color_meanings: ['靛紫代表深度感受力與內在探索，能強化自我覺察與情緒辨識，與你豐富細膩的內心世界共振。','霧藍帶來一種「情緒被接住」的安全感，在心理上能降低焦慮的激活程度，讓情緒有空間慢慢沉澱。'],
     color_psych: '高神經質（高情感敏感度）的人對藍紫色系有特別強的情緒調節效果——這類色彩能降低杏仁核的活化反應（大腦的情緒警報器），讓你在情緒浪頭上感受到一種「有人陪著」的穩定感。',
     triggers: [
@@ -2085,7 +2090,7 @@ function renderSEL(topDim, accentColor) {
   var colorDesc = document.getElementById('r-color-desc');
   if (colorRow) {
     var FD_key = B5Flowers[topDim][0];
-    var lc = FD[FD_key].lc;
+    var lc = sd.color_hex || FD[FD_key].lc;
     colorRow.innerHTML = lc.map(function(hex, i) {
       return '<div class="sel-color-chip">'
         + '<div class="sel-color-swatch" style="background:'+hex+'"></div>'
